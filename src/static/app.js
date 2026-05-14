@@ -608,15 +608,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const shareOptionsId = `share-options-${name.replace(/\s+/g, '-')}`;
     const shareOptions = activityCard.querySelector(`#${shareOptionsId}`);
 
+    function buildShareText(includeSchedule) {
+      const base = `Check out "${name}" at Mergington High School! ${details.description}`;
+      return includeSchedule ? `${base} Schedule: ${formattedSchedule}` : base;
+    }
+
     shareButton.addEventListener("click", (event) => {
       event.stopPropagation();
 
-      const shareText = `Check out "${name}" at Mergington High School! ${details.description} Schedule: ${formattedSchedule}`;
-      const shareUrl = window.location.href;
-
       // Use native Web Share API if available (works great on mobile)
       if (navigator.share) {
-        navigator.share({ title: name, text: shareText, url: shareUrl }).catch(() => {});
+        navigator.share({ title: name, text: buildShareText(true), url: window.location.href }).catch(() => {});
         return;
       }
 
@@ -638,9 +640,8 @@ document.addEventListener("DOMContentLoaded", () => {
       link.addEventListener("click", (event) => {
         event.preventDefault();
         const platform = link.dataset.platform;
-        const shareText = `Check out "${name}" at Mergington High School! ${details.description}`;
         const shareUrl = encodeURIComponent(window.location.href);
-        const encodedText = encodeURIComponent(shareText);
+        const encodedText = encodeURIComponent(buildShareText(false));
         let url = "";
 
         if (platform === "whatsapp") {
@@ -666,14 +667,7 @@ document.addEventListener("DOMContentLoaded", () => {
           copyLinkBtn.innerHTML = "<span>🔗</span> Copy Link";
         }, 2000);
       }).catch(() => {
-        // Fallback for browsers that don't support clipboard API
-        const input = document.createElement("input");
-        input.value = window.location.href;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand("copy");
-        document.body.removeChild(input);
-        copyLinkBtn.textContent = "✅ Copied!";
+        copyLinkBtn.textContent = "❌ Copy failed";
         setTimeout(() => {
           copyLinkBtn.innerHTML = "<span>🔗</span> Copy Link";
         }, 2000);
