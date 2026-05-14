@@ -569,6 +569,22 @@ document.addEventListener("DOMContentLoaded", () => {
         `
         }
       </div>
+      <div class="share-section">
+        <button class="share-button" data-activity="${name}" aria-label="Share this activity">
+          <span class="share-icon">📤</span> Share
+        </button>
+        <div class="share-options hidden" id="share-options-${name.replace(/\s+/g, '-')}">
+          <a class="share-option" href="#" data-platform="whatsapp" data-activity="${name}" aria-label="Share on WhatsApp">
+            <span>💬</span> WhatsApp
+          </a>
+          <a class="share-option" href="#" data-platform="twitter" data-activity="${name}" aria-label="Share on Twitter">
+            <span>🐦</span> Twitter
+          </a>
+          <button class="share-option copy-link-btn" data-activity="${name}" aria-label="Copy link">
+            <span>🔗</span> Copy Link
+          </button>
+        </div>
+      </div>
     `;
 
     // Add click handlers for delete buttons
@@ -587,8 +603,93 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // Add share button handler
+    const shareButton = activityCard.querySelector(".share-button");
+    const shareOptionsId = `share-options-${name.replace(/\s+/g, '-')}`;
+    const shareOptions = activityCard.querySelector(`#${shareOptionsId}`);
+
+    shareButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+
+      const shareText = `Check out "${name}" at Mergington High School! ${details.description} Schedule: ${formattedSchedule}`;
+      const shareUrl = window.location.href;
+
+      // Use native Web Share API if available (works great on mobile)
+      if (navigator.share) {
+        navigator.share({ title: name, text: shareText, url: shareUrl }).catch(() => {});
+        return;
+      }
+
+      // Otherwise toggle the share options dropdown
+      const isHidden = shareOptions.classList.contains("hidden");
+
+      // Close any other open share dropdowns
+      document.querySelectorAll(".share-options").forEach((el) => {
+        el.classList.add("hidden");
+      });
+
+      if (isHidden) {
+        shareOptions.classList.remove("hidden");
+      }
+    });
+
+    // Handle individual share platform links
+    shareOptions.querySelectorAll(".share-option[data-platform]").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        const platform = link.dataset.platform;
+        const shareText = `Check out "${name}" at Mergington High School! ${details.description}`;
+        const shareUrl = encodeURIComponent(window.location.href);
+        const encodedText = encodeURIComponent(shareText);
+        let url = "";
+
+        if (platform === "whatsapp") {
+          url = `https://wa.me/?text=${encodedText}%20${shareUrl}`;
+        } else if (platform === "twitter") {
+          url = `https://twitter.com/intent/tweet?text=${encodedText}&url=${shareUrl}`;
+        }
+
+        if (url) {
+          window.open(url, "_blank", "noopener,noreferrer");
+        }
+
+        shareOptions.classList.add("hidden");
+      });
+    });
+
+    // Handle copy link button
+    const copyLinkBtn = shareOptions.querySelector(".copy-link-btn");
+    copyLinkBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        copyLinkBtn.textContent = "✅ Copied!";
+        setTimeout(() => {
+          copyLinkBtn.innerHTML = "<span>🔗</span> Copy Link";
+        }, 2000);
+      }).catch(() => {
+        // Fallback for browsers that don't support clipboard API
+        const input = document.createElement("input");
+        input.value = window.location.href;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+        copyLinkBtn.textContent = "✅ Copied!";
+        setTimeout(() => {
+          copyLinkBtn.innerHTML = "<span>🔗</span> Copy Link";
+        }, 2000);
+      });
+      shareOptions.classList.add("hidden");
+    });
+
     activitiesList.appendChild(activityCard);
   }
+
+  // Close share dropdowns when clicking outside
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".share-options").forEach((el) => {
+      el.classList.add("hidden");
+    });
+  });
 
   // Event listeners for search and filter
   searchInput.addEventListener("input", (event) => {
