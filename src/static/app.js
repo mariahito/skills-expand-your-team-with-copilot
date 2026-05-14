@@ -1,4 +1,25 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Dark mode toggle
+  const darkModeToggle = document.getElementById("dark-mode-toggle");
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    darkModeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
+    darkModeToggle.title = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+    localStorage.setItem("theme", theme);
+  }
+
+  // Load saved theme, or fall back to OS/browser preference, then light
+  const savedTheme =
+    localStorage.getItem("theme") ||
+    (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  applyTheme(savedTheme);
+
+  darkModeToggle.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme");
+    applyTheme(current === "dark" ? "light" : "dark");
+  });
+
   // DOM elements
   const activitiesList = document.getElementById("activities-list");
   const messageDiv = document.getElementById("message");
